@@ -29,3 +29,4 @@ EOL
 # اجرای ربات
 php bot.php
 echo "ربات با موفقیت نصب شد و اجرا شد!"
+echo "@reboot php /opt/hootibot/bot.php" | crontab -
