@@ -1,32 +1,37 @@
 #!/bin/bash
 
-echo "شروع نصب HootiBot..."
+# Update packages
+sudo apt-get update
 
-# دریافت اطلاعات از کاربر
-read -p "توکن ربات را وارد کنید: " BOT_TOKEN
-read -p "آیدی عددی ادمین را وارد کنید: " ADMIN_ID
-read -p "دامنه X-UI را وارد کنید (مثال: https://panel.example.com): " PANEL_URL
-read -p "توکن API پنل X-UI را وارد کنید: " PANEL_API_KEY
+# Install PHP and required extensions
+sudo apt-get install -y php php-curl php-mysql php-cli php-json php-mbstring php-zip unzip
 
-# نصب پیش‌نیازها
-apt update && apt upgrade -y
-apt install -y php php-cli php-curl unzip git
+# Install MySQL
+sudo apt-get install -y mysql-server
 
-# دانلود و تنظیم ربات
-git clone https://github.com/jasemhooti/hootibot.git /opt/hootibot
-cd /opt/hootibot
+# Install Composer
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+sudo chmod +x /usr/local/bin/composer
 
-# ایجاد فایل کانفیگ
-cat > config.php <<EOL
-<?php
-define('BOT_TOKEN', '$BOT_TOKEN');
-define('ADMIN_ID', '$ADMIN_ID');
-define('PANEL_URL', '$PANEL_URL');
-define('PANEL_API_KEY', '$PANEL_API_KEY');
-?>
-EOL
+# Clone repository
+git clone https://github.com/jasemhooti/hootibot.git
+cd hootibot
 
-# اجرای ربات
-php bot.php
-echo "ربات با موفقیت نصب شد و اجرا شد!"
-echo "@reboot php /opt/hootibot/bot.php" | crontab -
+# Create database
+sudo mysql -e "CREATE DATABASE hootibot_db;"
+sudo mysql -e "CREATE USER 'hootibot_user'@'localhost' IDENTIFIED BY 'StrongPassword123';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON hootibot_db.* TO 'hootibot_user'@'localhost';"
+sudo mysql -e "FLUSH PRIVILEGES;"
+
+# Import database schema
+sudo mysql hootibot_db < database.sql
+
+# Install PHP dependencies
+composer require telegram-bot/api
+
+# Set permissions
+chmod 755 -R storage/
+chmod 755 -R uploads/
+
+echo "Installation completed! Please edit includes/config.php with your details"
