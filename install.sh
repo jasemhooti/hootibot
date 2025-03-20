@@ -1,14 +1,31 @@
 #!/bin/bash
 
-echo "Updating system and installing required packages..."
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y php php-curl php-mbstring php-xml unzip git
+echo "شروع نصب HootiBot..."
 
-echo "Cloning hootibot repository..."
+# دریافت اطلاعات از کاربر
+read -p "توکن ربات را وارد کنید: " BOT_TOKEN
+read -p "آیدی عددی ادمین را وارد کنید: " ADMIN_ID
+read -p "دامنه X-UI را وارد کنید (مثال: https://panel.example.com): " PANEL_URL
+read -p "توکن API پنل X-UI را وارد کنید: " PANEL_API_KEY
+
+# نصب پیش‌نیازها
+apt update && apt upgrade -y
+apt install -y php php-cli php-curl unzip git
+
+# دانلود و تنظیم ربات
 git clone https://github.com/jasemhooti/hootibot.git /opt/hootibot
-
-echo "Setting up bot..."
 cd /opt/hootibot
-cp config.example.php config.php
 
-echo "Installation complete. Please edit config.php and set your bot token and admin ID."
+# ایجاد فایل کانفیگ
+cat > config.php <<EOL
+<?php
+define('BOT_TOKEN', '$BOT_TOKEN');
+define('ADMIN_ID', '$ADMIN_ID');
+define('PANEL_URL', '$PANEL_URL');
+define('PANEL_API_KEY', '$PANEL_API_KEY');
+?>
+EOL
+
+# اجرای ربات
+php bot.php
+echo "ربات با موفقیت نصب شد و اجرا شد!"
