@@ -1,14 +1,15 @@
 <?php
 
 return [
-    'bot_token' => '6414210268:AAEL-RZiABoMzS_QY922hOQnpXcam9OgiF0', // توکن ربات خود را اینجا قرار دهید
-    'admin_id' => '5691972852', // آیدی عددی ادمین
+    'bot_token' => '6414210268:AAEL-RZiABoMzS_QY922hOQnpXcam9OgiF0',
+    'admin_id' => '5691972852',
     'database' => [
         'host' => 'localhost',
         'dbname' => 'hootibot',
-        'username' => 'root',
-        'password' => ''
-    ],
+        'username' => 'hootibot_user',
+        'password' => 'yourpassword'
+    ]
+];
     'channel_lock' => [
         'enabled' => true,
         'channel_id' => '@yourchannel'
