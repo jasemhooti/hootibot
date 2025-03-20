@@ -1,56 +1,54 @@
 <?php
-
 require 'config.php';
 
+$API_URL = "https://api.telegram.org/bot" . BOT_TOKEN . "/";
 $update = json_decode(file_get_contents("php://input"), true);
-if (!$update) exit;
 
-$bot_token = $config['bot_token'];
-$admin_id = $config['admin_id'];
+if (isset($update["message"])) {
+    $chat_id = $update["message"]["chat"]["id"];
+    $message_text = $update["message"]["text"];
+    $user_id = $update["message"]["from"]["id"];
 
-function sendMessage($chat_id, $text, $keyboard = null) {
-    global $bot_token;
-    $url = "https://api.telegram.org/bot$bot_token/sendMessage";
+    if ($message_text == "/start") {
+        sendMessage($chat_id, "👋 خوش آمدید! لطفاً یکی از پلن‌های زیر را انتخاب کنید:\n\n💳 10 گیگ - 10,000 تومان\n💳 20 گیگ - 20,000 تومان\n\nبرای خرید، مبلغ را کارت به کارت کنید و رسید را برای ادمین ارسال کنید.");
+    } elseif (strpos($message_text, "پرداخت") !== false) {
+        sendMessage(ADMIN_ID, "📢 یک پرداخت جدید دریافت شد:\n\nفرستنده: $user_id\n$message_text");
+        sendMessage($chat_id, "✅ اطلاعات پرداخت ارسال شد. منتظر تأیید ادمین باشید.");
+    }
+}
+
+// ارسال پیام به کاربر
+function sendMessage($chat_id, $text) {
+    global $API_URL;
+    file_get_contents($API_URL . "sendMessage?chat_id=$chat_id&text=" . urlencode($text));
+}
+
+// ارسال کانفیگ به کاربر
+function sendConfig($chat_id, $size_gb) {
+    global $API_URL, $user_id;
+    
+    $config_link = generateConfig($size_gb);
+    sendMessage($chat_id, "✅ خرید شما تأیید شد!\n\n🔗 لینک کانفیگ شما:\n$config_link");
+}
+
+// ایجاد لینک کانفیگ از X-UI
+function generateConfig($size_gb) {
+    global $PANEL_URL, $PANEL_API_KEY;
+
     $data = [
-        'chat_id' => $chat_id,
-        'text' => $text,
-        'parse_mode' => 'Markdown'
+        "remark" => "UserVPN",
+        "port" => rand(10000, 60000),
+        "limitGB" => $size_gb
     ];
-    if ($keyboard) {
-        $data['reply_markup'] = json_encode(['inline_keyboard' => $keyboard]);
-    }
-    file_get_contents($url . "?" . http_build_query($data));
+
+    $ch = curl_init("$PANEL_URL/api/addClient");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $PANEL_API_KEY", "Content-Type: application/json"]);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    return json_decode($response, true)['link'] ?? "خطا در ایجاد کانفیگ!";
 }
-
-// مدیریت پیام‌ها
-if (isset($update['message'])) {
-    $message = $update['message'];
-    $chat_id = $message['chat']['id'];
-    $text = $message['text'] ?? '';
-
-    if ($text == "/start") {
-        sendMessage($chat_id, "👋 خوش آمدید! لطفا گزینه مورد نظر را انتخاب کنید.", [
-            [['text' => '📦 خرید اشتراک', 'callback_data' => 'buy']],
-            [['text' => '💰 شارژ حساب', 'callback_data' => 'deposit']],
-            [['text' => '🎮 بازی دو نفره', 'callback_data' => 'game']]
-        ]);
-    }
-}
-
-// مدیریت دکمه‌های شیشه‌ای
-if (isset($update['callback_query'])) {
-    $callback = $update['callback_query'];
-    $chat_id = $callback['message']['chat']['id'];
-    $data = $callback['data'];
-
-    if ($data == "buy") {
-        sendMessage($chat_id, "📦 لطفا حجم مورد نظر را انتخاب کنید:", [
-            [['text' => '10 گیگ - 50 هزار تومان', 'callback_data' => 'buy_10']],
-            [['text' => '20 گیگ - 90 هزار تومان', 'callback_data' => 'buy_20']]
-        ]);
-    } elseif ($data == "buy_10") {
-        sendMessage($chat_id, "✅ لطفا مبلغ 50 هزار تومان را کارت به کارت کنید و رسید را ارسال کنید.");
-    }
-}
-
 ?>
