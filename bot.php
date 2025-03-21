@@ -1,42 +1,34 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
-require __DIR__ . '/includes/config.php';
-require __DIR__ . '/includes/database.php';
+
+require 'vendor/autoload.php';
+$config = require 'config.php';
 
 use Telegram\Bot\Api;
 
-$telegram = new Api(BOT_TOKEN);
+$telegram = new Api($config['bot_token']);
+$updates = $telegram->getWebhookUpdates();
 
-// دستور اصلی /start
-$telegram->addCommand(\Telegram\Bot\Commands\HelpCommand::class);
+if ($updates->isType('message')) {
+    $message = $updates->getMessage();
+    $chatId = $message->getChat()->getId();
 
-// مدیریت رویدادها
-$update = $telegram->getWebhookUpdate();
+    switch ($message->getText()) {
+        case '/start':
+            $telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => 'Welcome to HootiBot! Please choose an option:',
+                'reply_markup' => json_encode([
+                    'keyboard' => [
+                        [['text' => 'Buy VPN'], ['text' => 'Check Balance']],
+                        [['text' => 'Support'], ['text' => 'Settings']],
+                    ],
+                    'resize_keyboard' => true,
+                    'one_time_keyboard' => true,
+                ]),
+            ]);
+            break;
 
-// منطق اصلی ربات
-if ($update->getMessage()) {
-    $message = $update->getMessage();
-    $chat_id = $message->getChat()->getId();
-    
-    if ($message->getText() == '/start') {
-        // نمایش منوی اصلی
-        $keyboard = [
-            ['خرید VPN', 'شارژ حساب'],
-            ['بازی آنلاین', 'تیکت پشتیبانی']
-        ];
-        
-        $reply_markup = $telegram->replyKeyboardMarkup([
-            'keyboard' => $keyboard,
-            'resize_keyboard' => true,
-            'one_time_keyboard' => false
-        ]);
-        
-        $telegram->sendMessage([
-            'chat_id' => $chat_id,
-            'text' => 'به ربات خوش آمدید!',
-            'reply_markup' => $reply_markup
-        ]);
+        // More cases for handling different commands and messages
     }
 }
-
-// بقیه منطق ربات...
+?>
